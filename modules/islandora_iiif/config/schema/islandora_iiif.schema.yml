@@ -19,3 +19,6 @@ views.style.iiif_manifest:
       type: sequence
       sequence:
         type: string
+    getdimensions_from_server:
+      type: boolean
+      label: "Retrieve image dimensions from IIIF server"

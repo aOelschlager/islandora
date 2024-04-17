@@ -11,6 +11,8 @@ use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Url;
+use Drupal\islandora_iiif\IiifInfo;
+use Drupal\media\Entity\Media;
 use Drupal\views\Plugin\views\style\StylePluginBase;
 use Drupal\views\ResultRow;
 use GuzzleHttp\Client;
@@ -58,6 +60,13 @@ class IIIFManifest extends StylePluginBase {
    * @var \Symfony\Component\Serializer\Serializer
    */
   protected $serializer;
+
+  /**
+   * The IIIF Info service.
+   *
+   * @var \Drupal\islandora_iiif\IiifInfo
+   */
+  protected $iiifInfo;
 
   /**
    * The request service.
@@ -111,7 +120,7 @@ class IIIFManifest extends StylePluginBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, SerializerInterface $serializer, Request $request, ImmutableConfig $iiif_config, EntityTypeManagerInterface $entity_type_manager, FileSystemInterface $file_system, Client $http_client, MessengerInterface $messenger, ModuleHandlerInterface $moduleHandler) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, SerializerInterface $serializer, Request $request, ImmutableConfig $iiif_config, EntityTypeManagerInterface $entity_type_manager, FileSystemInterface $file_system, Client $http_client, MessengerInterface $messenger, ModuleHandlerInterface $moduleHandlerm, IiifInfo $iiif_info) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->serializer = $serializer;
@@ -122,6 +131,7 @@ class IIIFManifest extends StylePluginBase {
     $this->httpClient = $http_client;
     $this->messenger = $messenger;
     $this->moduleHandler = $moduleHandler;
+    $this->iiifInfo = $iiif_info;
   }
 
   /**
@@ -139,7 +149,8 @@ class IIIFManifest extends StylePluginBase {
       $container->get('file_system'),
       $container->get('http_client'),
       $container->get('messenger'),
-      $container->get('module_handler')
+      $container->get('module_handler'),
+      $container->get('islandora_iiif')
     );
   }
 
@@ -269,6 +280,9 @@ class IIIFManifest extends StylePluginBase {
           $annotation_id = $iiif_base_id . '/annotation/' . $entity->id();
 
           [$width, $height] = $this->getCanvasDimensions($iiif_url, $image, $mime_type);
+          if ($width == 0) {
+            continue;
+          }
 
           $tmp_canvas = [
             // @see https://iiif.io/api/presentation/2.1/#canvas
@@ -337,42 +351,66 @@ class IIIFManifest extends StylePluginBase {
    * @return [string]
    *   The width and height of the image.
    */
-  protected function getCanvasDimensions(string $iiif_url, FieldItemInterface $image, string $mime_type) {
+  protected function getCanvasDimensions(string $iiif_url, Media $media, FieldItemInterface $image, string $mime_type) {
+
+    // If the media has field_height and field_width, return those values.
+    if ($media->hasField('field_height')
+      && !$media->get('field_height')->isEmpty()
+      && $media->get('field_height')->value > 0
+      && $media->hasField('field_width')
+      && !$media->get('field_width')->isEmpty()
+      && $media->get('field_width')->value > 0) {
+        return [intval($media->get('field_width')->value),
+          intval($media->get('field_height')->value),
+        ];
+      }
 
     if (isset($image->width) && is_numeric($image->width)
     && isset($image->height) && is_numeric($image->height)) {
       return [intval($image->width), intval($image->height)];
     }
 
-    try {
-      $info_json = $this->httpClient->get($iiif_url)->getBody();
-      $resource = json_decode($info_json, TRUE);
-      $width = $resource['width'];
-      $height = $resource['height'];
+    if ($properties = $image->getProperties()
+      && isset($properties['width']) && is_numeric($properties['width'])
+      && isset($properties['height']) && is_numeric($properties['width'])) {
+      return [intval($properties['width']),
+        intval($properties['height']),
+      ];
     }
-    catch (ClientException | ServerException | ConnectException $e) {
-      // If we couldn't get the info.json from IIIF
-      // try seeing if we can get it from Drupal.
-      if (empty($width) || empty($height)) {
-        // Get the image properties so we know the image width/height.
-        $properties = $image->getProperties();
-        $width = isset($properties['width']) ? $properties['width'] : 0;
-        $height = isset($properties['height']) ? $properties['height'] : 0;
 
-        // If this is a TIFF AND we don't know the width/height
-        // see if we can get the image size via PHP's core function.
-        if ($mime_type === 'image/tiff' && (!$width || !$height)) {
-          $uri = $image->entity->getFileUri();
-          $path = $this->fileSystem->realpath($uri);
-          $image_size = getimagesize($path);
-          if ($image_size) {
-            $width = $image_size[0];
-            $height = $image_size[1];
-          }
+    $entity = $image->entity;
+    if ($entity->hasField('field_height') && !$entity->get('field_height')->isEmpty()
+      && $entity->get('field_height')->value > 0
+      && $entity->hasField('field_width')
+      && !$entity->get('field_width')->isEmpty()
+      && $entity->get('field_width')->value > 0) {
+      return [$entity->get('field_width')->value,
+        $entity->get('field_height')->value,
+      ];
+    }
+
+    if ($mime_type === 'image/tiff' || 'image/jp2') {
+      // If this is a TIFF AND we don't know the width/height
+      // see if we can get the image size via PHP's core function.
+      $uri = $image->entity->getFileUri();
+      $path = $this->fileSystem->realpath($uri);
+      if (!empty($path)) {
+        $image_size = getimagesize($path);
+        if ($image_size) {
+          return [intval($image_size[0]),
+            intval($image_size[1]),
+          ];
         }
       }
     }
-    return [$width, $height];
+
+    // As a last resort, get it from the IIIF server.
+    // This can be very slow and will fail if there are too many pages.
+    $dimensions = $this->iiifInfo->getImageDimensions($image->entity);
+    if ($dimensions !== FALSE) {
+      return $dimensions;
+    }
+      return [0, 0];
   }
 
   /**
