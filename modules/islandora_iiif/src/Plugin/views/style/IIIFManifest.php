@@ -120,7 +120,7 @@ class IIIFManifest extends StylePluginBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, SerializerInterface $serializer, Request $request, ImmutableConfig $iiif_config, EntityTypeManagerInterface $entity_type_manager, FileSystemInterface $file_system, Client $http_client, MessengerInterface $messenger, ModuleHandlerInterface $moduleHandlerm, IiifInfo $iiif_info) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, SerializerInterface $serializer, Request $request, ImmutableConfig $iiif_config, EntityTypeManagerInterface $entity_type_manager, FileSystemInterface $file_system, Client $http_client, MessengerInterface $messenger, ModuleHandlerInterface $moduleHandler, IiifInfo $iiif_info) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->serializer = $serializer;
