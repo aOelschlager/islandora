@@ -279,7 +279,7 @@ class IIIFManifest extends StylePluginBase {
           $canvas_id = $iiif_base_id . '/canvas/' . $entity->id();
           $annotation_id = $iiif_base_id . '/annotation/' . $entity->id();
 
-          [$width, $height] = $this->getCanvasDimensions($iiif_url, $image, $mime_type);
+          [$width, $height] = $this->getCanvasDimensions($iiif_url, $entity, $image, $mime_type);
           if ($width == 0) {
             continue;
           }
