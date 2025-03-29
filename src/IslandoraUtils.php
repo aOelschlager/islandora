@@ -230,7 +230,10 @@ class IslandoraUtils {
     // Process field names, stripping off 'media.' and appending 'target_id'.
     $conditions = array_map(
       function ($field) {
-        return ltrim($field, 'media.') . '.target_id';
+        if (str_starts_with($field, 'media.')) {
+          $field = substr($field, 6);
+        }
+        return $field . '.target_id';
       },
       $fields
     );
