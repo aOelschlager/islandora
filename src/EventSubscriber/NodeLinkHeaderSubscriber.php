@@ -21,6 +21,9 @@ class NodeLinkHeaderSubscriber extends LinkHeaderSubscriber implements EventSubs
    *   Event containing the response.
    */
   public function onResponse(ResponseEvent $event) {
+    if (!$this->settings->get('allow_header_links')) {
+      return;
+    }
     $response = $event->getResponse();
 
     $node = $this->getObject($response, 'node');

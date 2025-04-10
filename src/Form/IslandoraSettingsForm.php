@@ -44,6 +44,7 @@ class IslandoraSettingsForm extends ConfigFormBase {
   const GEMINI_PSEUDO_FIELD = 'field_gemini_uri';
   const NODE_DELETE_MEDIA_AND_FILES = 'delete_media_and_files';
   const REDIRECT_AFTER_MEDIA_SAVE = 'redirect_after_media_save';
+  const ALLOW_HEADER_LINKS = 'allow_header_links';
   const FAST_TERM_QUERIES = 'fast_term_queries';
 
   /**
@@ -279,6 +280,13 @@ class IslandoraSettingsForm extends ConfigFormBase {
       '#url' => Url::fromRoute('system.jsonld_settings'),
     ];
 
+    $form[self::ALLOW_HEADER_LINKS] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Allow header links'),
+      '#description' => $this->t('If checked, links in the HTTP header will be added'),
+      '#default_value' => (bool) $config->get(self::ALLOW_HEADER_LINKS),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -393,6 +401,7 @@ class IslandoraSettingsForm extends ConfigFormBase {
       ->set(self::NODE_DELETE_MEDIA_AND_FILES, $form_state->getValue(self::NODE_DELETE_MEDIA_AND_FILES))
       ->set(self::FAST_TERM_QUERIES, $form_state->getValue(self::FAST_TERM_QUERIES))
       ->set(self::REDIRECT_AFTER_MEDIA_SAVE, $form_state->getValue(self::REDIRECT_AFTER_MEDIA_SAVE))
+      ->set(self::ALLOW_HEADER_LINKS, $form_state->getValue(self::ALLOW_HEADER_LINKS))
       ->save();
 
     parent::submitForm($form, $form_state);

@@ -2,6 +2,7 @@
 
 namespace Drupal\islandora\EventSubscriber;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -73,6 +74,13 @@ abstract class LinkHeaderSubscriber implements EventSubscriberInterface {
   protected $utils;
 
   /**
+   * Module settings.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  protected $settings;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -89,6 +97,8 @@ abstract class LinkHeaderSubscriber implements EventSubscriberInterface {
    *   Request stack (for current request).
    * @param \Drupal\islandora\IslandoraUtils $utils
    *   Islandora utils.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   Config factory.
    */
   public function __construct(
     EntityTypeManagerInterface $entity_type_manager,
@@ -97,7 +107,8 @@ abstract class LinkHeaderSubscriber implements EventSubscriberInterface {
     AccountInterface $account,
     RouteMatchInterface $route_match,
     RequestStack $request_stack,
-    IslandoraUtils $utils
+    IslandoraUtils $utils,
+    ConfigFactoryInterface $config_factory
   ) {
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
@@ -108,6 +119,7 @@ abstract class LinkHeaderSubscriber implements EventSubscriberInterface {
     $this->account = $account;
     $this->requestStack = $request_stack;
     $this->utils = $utils;
+    $this->settings = $config_factory->get('islandora.settings');
   }
 
   /**

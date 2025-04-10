@@ -18,6 +18,9 @@ class MediaLinkHeaderSubscriber extends LinkHeaderSubscriber implements EventSub
    * {@inheritdoc}
    */
   public function onResponse(ResponseEvent $event) {
+    if (!$this->settings->get('allow_header_links')) {
+      return;
+    }
     $response = $event->getResponse();
 
     $media = $this->getObject($response, 'media');

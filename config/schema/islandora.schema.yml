@@ -14,6 +14,9 @@ islandora.settings:
     jwt_expiry:
       type: string
       label: 'How long JWTs should last before expiring.'
+    allow_header_links:
+      type: boolean
+      label: 'Allow generating links in the HTTP header'
     delete_media_and_files:
       type: boolean
       label: 'Node Delete with Media and Files'
