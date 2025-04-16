@@ -4,11 +4,11 @@ name: 'islandora'
 description: "Islandora Core"
 type: module
 package: Islandora
-core_version_requirement: ^10.2
+core_version_requirement: ^10.3 || ^11
 dependencies:
+  - action:action
   - context:context_ui
   - ctools:ctools
-  - drupal:action
   - drupal:basic_auth
   - drupal:block
   - drupal:content_translation

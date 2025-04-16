@@ -17,6 +17,7 @@
     }
   ],
   "require": {
+    "drupal/action": "^0.2",
     "drupal/context": "^4 || ^5@RC",
     "drupal/ctools": "^3.8 || ^4",
     "drupal/eva" : "^3.0",
@@ -24,7 +25,7 @@
     "drupal/filehash": "^2 || ^3",
     "drupal/flysystem" : "^2.0@alpha",
     "drupal/jsonld": "^2 || ^3",
-    "drupal/jwt": "^1.1 || ^2",
+    "drupal/jwt": "^2.2 || ^3",
     "drupal/migrate_plus" : "^5.1 || ^6",
     "drupal/migrate_source_csv" : "^3.4",
     "drupal/prepopulate" : "^2.2",
