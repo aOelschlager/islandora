@@ -184,24 +184,20 @@ class MediaTrackItem extends FileItem {
    * {@inheritdoc}
    */
   public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
-    // @todo This will need to generate a text file, containing a sequence of
-    // timestamps and nonsense text. Include some gap periods where nothing is
-    // displayed.
-    // See the ImageItem::generateSampleValue() for how the files are saved.
-    // The part about "Generate a max of 5 different images" is a good idea
-    // here too. We only need a WebVTT few files.
-    // See one of the text item implementation for how to generate nonsense.
-    // Pseudocode plan...
-    // $sample_file_text = 'WEBVTT'; // start of file.
-    // for ($i = 0; $ < $utterances; $i++) {
-    // $sample_file_text += \n\n
-    // $timestamp += 3-10seconds // start of display
-    // $sample_file_text += $timestamp
-    // $timestamp += 3-10seconds // end of display
-    // $sample_file_text += $timestamp
-    // $sample_file_text += randomText()
-    // }
-    // $file = file_write($sample_file_text, 'random_filename.vtt');
+    $sample_file_text = <<<EOT
+WEBVTT
+
+00:00:00.500 --> 00:00:02.000
+This is a test subtitle.
+
+00:00:04.500 --> 00:00:06.300
+This is another test subtitle.
+EOT;
+
+    /** @var \Drupal\file\FileRepositoryInterface $file_repo */
+    $file_repo = \Drupal::service('file.repository');
+    $file = $file_repo->writeData($sample_file_text, "public://sample_file.vtt");
+
     $values = [
       'target_id' => $file->id(),
       // Randomize the rest of these...
@@ -209,7 +205,7 @@ class MediaTrackItem extends FileItem {
       'kind' => '',
       'srclang' => '',
       // Careful with this one, complex validation.
-      'default' => '',
+      'default' => 0,
     ];
     return $values;
   }
