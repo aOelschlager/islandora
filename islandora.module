@@ -509,8 +509,6 @@ function islandora_form_block_form_alter(&$form, FormStateInterface $form_state,
   unset($form['visibility']['node_had_namespace']);
   unset($form['visibility']['node_has_ancestor']);
   unset($form['visibility']['node_has_parent']);
-  unset($form['visibility']['node_has_term']);
-  unset($form['visibility']['node_is_islandora_object']);
   unset($form['visibility']['node_referenced_by_node']);
   unset($form['visibility']['parent_node_has_term']);
 }

@@ -85,7 +85,7 @@ class MediaSourceHasMimetype extends ConditionPluginBase {
    */
   public function defaultConfiguration() {
     return array_merge(
-      ['mimetype' => []],
+      ['mimetype' => ""],
       parent::defaultConfiguration()
     );
   }
