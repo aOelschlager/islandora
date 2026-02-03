@@ -36,7 +36,7 @@ class ManageMembersController extends EntityController {
     RouteMatchInterface $routeMatch,
     RequestStack $requestStack,
     protected EntityFieldManagerInterface $entityFieldManager,
-    protected IslandoraUtils $utils
+    protected IslandoraUtils $utils,
   ) {
     parent::__construct($entityTypeManager, $entityTypeBundleInfo, $entityRepository, $renderer, $stringTranslation, $urlGenerator, $routeMatch, $requestStack);
   }
