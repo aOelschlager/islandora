@@ -67,7 +67,8 @@ class EventGeneratorTest extends IslandoraKernelTestBase {
     // Create the event generator so we can test it.
     $this->eventGenerator = new EventGenerator(
       $this->container->get('islandora.utils'),
-      $this->container->get('islandora.media_source_service')
+      $this->container->get('islandora.media_source_service'),
+      $this->container->get('event_dispatcher')
     );
   }
 
@@ -114,6 +115,36 @@ class EventGeneratorTest extends IslandoraKernelTestBase {
 
     $this->assertBasicStructure($msg);
     $this->assertTrue($msg["type"] == "Delete", "Event must be of type 'Delete'.");
+  }
+
+  /**
+   * Tests that generated messages can be altered before serialization.
+   *
+   * @covers \Drupal\islandora\EventGenerator\EventGenerator::generateEvent
+   */
+  public function testGeneratedEventMessageCanBeAltered() {
+    $dispatcher = $this->container->get('event_dispatcher');
+    $dispatcher->addListener('islandora.generated_event_message', function ($event) {
+      $message = $event->getMessage();
+      $message['attachment']['content']['source_uri'] = 'http://listener.example/internal.jpg';
+      $event->setMessage($message);
+    });
+
+    $json = $this->eventGenerator->generateEvent(
+      $this->entity,
+      $this->user,
+      [
+        'event' => 'Generate Derivative',
+        'source_uri' => 'https://example.com/original.jpg',
+      ]
+    );
+    $msg = json_decode($json, TRUE);
+
+    $this->assertEquals(
+      'http://listener.example/internal.jpg',
+      $msg['attachment']['content']['source_uri'],
+      "source_uri should be replaceable by a generated message listener"
+    );
   }
 
   /**

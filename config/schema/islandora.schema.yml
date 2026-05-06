@@ -38,7 +38,6 @@ islandora.settings:
       sequence:
         type: string
 
-
 action.configuration.emit_node_event:
   type: mapping
   label: 'Emit a Node event to a queue/topic'

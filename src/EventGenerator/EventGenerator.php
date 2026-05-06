@@ -7,8 +7,11 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\islandora\IslandoraUtils;
+use Drupal\islandora\Event\GeneratedEventMessageEvent;
+use Drupal\islandora\Event\GeneratedEventMessageEventInterface;
 use Drupal\islandora\MediaSource\MediaSourceService;
 use Drupal\user\UserInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The default EventGenerator implementation.
@@ -32,16 +35,26 @@ class EventGenerator implements EventGeneratorInterface {
   protected $mediaSource;
 
   /**
+   * Event dispatcher.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\islandora\IslandoraUtils $utils
    *   Islandora utils.
    * @param \Drupal\islandora\MediaSource\MediaSourceService $media_source
    *   Media source service.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   *   Event dispatcher.
    */
-  public function __construct(IslandoraUtils $utils, MediaSourceService $media_source) {
+  public function __construct(IslandoraUtils $utils, MediaSourceService $media_source, EventDispatcherInterface $event_dispatcher) {
     $this->utils = $utils;
     $this->mediaSource = $media_source;
+    $this->eventDispatcher = $event_dispatcher;
   }
 
   /**
@@ -169,7 +182,13 @@ class EventGenerator implements EventGeneratorInterface {
       ];
     }
 
-    return json_encode($event);
+    $generated_message_event = new GeneratedEventMessageEvent($event, $entity, $user, $data);
+    $this->eventDispatcher->dispatch(
+      $generated_message_event,
+      GeneratedEventMessageEventInterface::EVENT_NAME
+    );
+
+    return json_encode($generated_message_event->getMessage());
   }
 
   /**
