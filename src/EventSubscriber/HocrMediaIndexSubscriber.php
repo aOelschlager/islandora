@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\my_module\EventSubscriber;
+namespace Drupal\islandora\EventSubscriber;
 
 use Drupal\Core\Entity\EntityCrudHookEvents;
 use Drupal\Core\Entity\Event\EntityCrudEvent;
