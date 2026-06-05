@@ -78,3 +78,7 @@ services:
       - '@current_user'
       - '@messenger'
       - '@date.formatter'
+  islandora.hocr_media_index_subscriber:
+    class: Drupal\islandora\EventSubscriber\HocrMediaIndexSubscriber
+    tags:
+      - { name: event_subscriber }
