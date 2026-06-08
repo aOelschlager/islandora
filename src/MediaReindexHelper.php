@@ -281,47 +281,48 @@ final class MediaReindexHelper {
     foreach ($node->getTranslationLanguages() as $langcode => $language) {
       $item_ids[] = 'entity:node/' . $node->id() . ':' . $langcode;
       $raw_ids[] = $node->id() . ':' . $langcode;
-    }
+      $id_array = $node->id() . ':' . $langcode;
 
-    if (empty($item_ids)) {
-      return;
-    }
-
-    try {
-      if ($this->indexTaskManager !== NULL) {
-        // IndexTaskManager::addItemsToIndex() accepts raw item IDs per
-        // datasource.  The item IDs here are already prefixed with the
-        // datasource plugin ID so we strip that prefix to get the raw IDs
-        // the tracker expects.
-        //$raw_ids = array_map(
-        //  static fn(string $id) => substr($id, strlen('entity:node/')),
-        //  $item_ids,
-        //);
-
-        /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
-        $tracker = $index->getTrackerInstance();
-        $tracker->trackItemsUpdated('entity:node', $raw_ids);
+      if (empty($item_ids)) {
+        return;
       }
-      else {
-        // Older Search API: call the tracker directly.
-        /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
-        $tracker = $index->getTrackerInstance();
-        //$raw_ids = array_map(
-        //  static fn(string $id) => substr($id, strlen('entity:node/')),
-        //  $item_ids,
-        //);
-        $tracker->trackItemsUpdated('entity:node', $raw_ids);
+
+      try {
+        if ($this->indexTaskManager !== NULL) {
+          // IndexTaskManager::addItemsToIndex() accepts raw item IDs per
+          // datasource.  The item IDs here are already prefixed with the
+          // datasource plugin ID so we strip that prefix to get the raw IDs
+          // the tracker expects.
+          //$raw_ids = array_map(
+          //  static fn(string $id) => substr($id, strlen('entity:node/')),
+          //  $item_ids,
+          //);
+
+          /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
+          $tracker = $index->getTrackerInstance();
+          $tracker->trackItemsUpdated('entity:node', array($id_array));
+       }
+        else {
+          // Older Search API: call the tracker directly.
+          /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
+          $tracker = $index->getTrackerInstance();
+          //$raw_ids = array_map(
+          //  static fn(string $id) => substr($id, strlen('entity:node/')),
+          //  $item_ids,
+          //);
+          $tracker->trackItemsUpdated('entity:node', array($id_array));
+        }
       }
-    }
-    catch (\Exception $e) {
-      $this->logger->error(
-        'islandora: Failed to mark node @nid for reindex on "@index": @message',
-        [
-          '@nid'     => $node->id(),
-          '@index'   => $index->id(),
-          '@message' => $e->getMessage(),
-        ],
-      );
+      catch (\Exception $e) {
+        $this->logger->error(
+          'islandora: Failed to mark node @nid for reindex on "@index": @message',
+          [
+            '@nid'     => $node->id(),
+            '@index'   => $index->id(),
+            '@message' => $e->getMessage(),
+          ],
+        );
+      }
     }
   }
 
