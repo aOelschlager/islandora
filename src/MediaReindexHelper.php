@@ -298,7 +298,7 @@ final class MediaReindexHelper {
 
         /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
         $tracker = $index->getTrackerInstance();
-        $tracker->trackItemsUpdated('entity:node', $raw_ids);
+        $tracker->trackItemsUpdated('entity:node', [$raw_ids]);
       }
       else {
         // Older Search API: call the tracker directly.
@@ -308,7 +308,7 @@ final class MediaReindexHelper {
           static fn(string $id) => substr($id, strlen('entity:node/')),
           $item_ids,
         );
-        $tracker->trackItemsUpdated('entity:node', $raw_ids);
+        $tracker->trackItemsUpdated('entity:node', [$raw_ids]);
       }
     }
     catch (\Exception $e) {
