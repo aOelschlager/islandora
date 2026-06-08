@@ -85,6 +85,10 @@ function islandora_media_insert(MediaInterface $media) {
   // Execute index reactions.
   $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $media);
 
+   /** @var \Drupal\islandora\MediaReindexHelper $helper */
+  $helper = \Drupal::service('islandora.helper');
+  $helper->handleMediaChange($media, 'insert');
+
   // If it has a parent node...
   $node = $utils->getParentNode($media);
   if ($node) {
@@ -110,6 +114,10 @@ function islandora_media_update(MediaInterface $media) {
   if (!$utils->haveFieldsChanged($media, $media->original)) {
     return;
   }
+
+  /** @var \Drupal\islandora\MediaReindexHelper $helper */
+  $helper = \Drupal::service('islandora.helper');
+  $helper->handleMediaChange($media, 'update');
 
   // Execute index reactions.
   $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $media);
@@ -144,6 +152,10 @@ function islandora_media_delete(MediaInterface $media) {
 
   // Execute delete reactions.
   $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\DeleteReaction', $media);
+
+  /** @var \Drupal\islandora\MediaReindexHelper $helper */
+  $helper = \Drupal::service('islandora.helper');
+  $helper->handleMediaChange($media, 'delete');
 }
 
 /**
@@ -241,22 +253,6 @@ function islandora_taxonomy_term_delete(TermInterface $term) {
 
   // Execute delete reactions.
   $utils->executeTermReactions('\Drupal\islandora\Plugin\ContextReaction\DeleteReaction', $term);
-}
-
-/**
- * Implements hook_entity_insert().
- */
-function islandora_entity_insert(EntityInterface $entity) {
-  \Drupal::service('islandora.hocr_solr_reindex_manager')
-    ->process($entity);
-}
-
-/**
- * Implements hook_entity_update().
- */
-function islandora_entity_update(EntityInterface $entity) {
-  \Drupal::service('islandora.hocr_solr_reindex_manager')
-    ->process($entity);
 }
 
 /**

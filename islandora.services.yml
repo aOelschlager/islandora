@@ -78,5 +78,10 @@ services:
       - '@current_user'
       - '@messenger'
       - '@date.formatter'
-  islandora.hocr_solr_reindex_manager:
-    class: Drupal\islandora\Service\HocrSolrReindexManager
+  islandora.helper:
+    class: Drupal\islandora\MediaReindexHelper
+    arguments:
+      - '@entity_type.manager'
+      - '@cache_tags.invalidator'
+      - '@logger.channel.islandora'
+      - '@?search_api.index_task_manager'
