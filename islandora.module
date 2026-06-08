@@ -244,6 +244,22 @@ function islandora_taxonomy_term_delete(TermInterface $term) {
 }
 
 /**
+ * Implements hook_entity_insert().
+ */
+function islandora_entity_insert(EntityInterface $entity) {
+  \Drupal::service('islandora.hocr_solr_reindex_manager')
+    ->process($entity);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function islandora_entity_update(EntityInterface $entity) {
+  \Drupal::service('islandora.hocr_solr_reindex_manager')
+    ->process($entity);
+}
+
+/**
  * Implements hook_jsonld_alter_normalized_array().
  */
 function islandora_jsonld_alter_normalized_array(EntityInterface $entity, array &$normalized, array $context) {
