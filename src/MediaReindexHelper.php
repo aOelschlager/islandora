@@ -277,8 +277,10 @@ final class MediaReindexHelper {
     // Build the datasource item ID: "entity:node/<nid>:<langcode>".
     // Search API tracks items per-language.
     $item_ids = [];
+    $raw_ids = [];
     foreach ($node->getTranslationLanguages() as $langcode => $language) {
       $item_ids[] = 'entity:node/' . $node->id() . ':' . $langcode;
+      $raw_ids[] = $node->id() . ':' . $langcode;
     }
 
     if (empty($item_ids)) {
@@ -291,24 +293,24 @@ final class MediaReindexHelper {
         // datasource.  The item IDs here are already prefixed with the
         // datasource plugin ID so we strip that prefix to get the raw IDs
         // the tracker expects.
-        $raw_ids = array_map(
-          static fn(string $id) => substr($id, strlen('entity:node/')),
-          $item_ids,
-        );
+        //$raw_ids = array_map(
+        //  static fn(string $id) => substr($id, strlen('entity:node/')),
+        //  $item_ids,
+        //);
 
         /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
         $tracker = $index->getTrackerInstance();
-        $tracker->trackItemsUpdated('entity:node', [$raw_ids]);
+        $tracker->trackItemsUpdated('entity:node', $raw_ids);
       }
       else {
         // Older Search API: call the tracker directly.
         /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
         $tracker = $index->getTrackerInstance();
-        $raw_ids = array_map(
-          static fn(string $id) => substr($id, strlen('entity:node/')),
-          $item_ids,
-        );
-        $tracker->trackItemsUpdated('entity:node', [$raw_ids]);
+        //$raw_ids = array_map(
+        //  static fn(string $id) => substr($id, strlen('entity:node/')),
+        //  $item_ids,
+        //);
+        $tracker->trackItemsUpdated('entity:node', $raw_ids);
       }
     }
     catch (\Exception $e) {
