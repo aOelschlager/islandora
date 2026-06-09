@@ -9,7 +9,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\media\MediaInterface;
 use Drupal\node\NodeInterface;
 use Drupal\search_api\IndexInterface;
-use Drupal\search_api\Task\IndexTaskManagerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -61,7 +60,6 @@ final class MediaReindexHelper {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly CacheTagsInvalidatorInterface $cacheTagsInvalidator,
     private readonly LoggerInterface $logger,
-    private readonly ?IndexTaskManagerInterface $indexTaskManager = NULL,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -206,11 +204,7 @@ final class MediaReindexHelper {
    * @param string $op
    *   The triggering operation ('insert', 'update', or 'delete').
    */
-  private function reindexNode(
-    NodeInterface $node,
-    MediaInterface $media,
-    string $op,
-  ): void {
+  private function reindexNode(NodeInterface $node, MediaInterface $media, string $op): void {
     $indexes = $this->getNodeIndexes();
     if (empty($indexes)) {
       $this->logger->warning(
@@ -265,8 +259,16 @@ final class MediaReindexHelper {
   /**
    * Marks a single node as needing re-indexing on the given index.
    *
-   * Prefers the IndexTaskManager (Search API ≥ 1.14) to batch the work.
-   * Falls back to calling the tracker directly for older versions.
+   * Calls $index->trackItemsUpdated() (the IndexInterface method) rather than
+   * the tracker directly.  IndexInterface::trackItemsUpdated() accepts raw
+   * per-datasource IDs (e.g. "1:en"), builds the combined item IDs internally,
+   * and then calls TrackerInterface::trackItemsUpdated() with only the
+   * combined-ID array — which is the correct single-argument signature of
+   * TrackerPluginBase::trackItemsUpdated(?array $ids).
+   *
+   * Calling $tracker->trackItemsUpdated($datasource_id, $raw_ids) directly
+   * would cause a TypeError because the tracker method does not accept a
+   * datasource-ID string as its first argument.
    *
    * @param \Drupal\search_api\IndexInterface $index
    *   The target Search API index.
@@ -274,55 +276,32 @@ final class MediaReindexHelper {
    *   The node to mark.
    */
   private function markNodeForReindex(IndexInterface $index, NodeInterface $node): void {
-    // Build the datasource item ID: "entity:node/<nid>:<langcode>".
-    // Search API tracks items per-language.
-    $item_ids = [];
+    // Collect per-language raw IDs in the form "<nid>:<langcode>".
+    // Search API tracks one item per translation.
     $raw_ids = [];
-    foreach ($node->getTranslationLanguages() as $langcode => $language) {
-      $item_ids[] = 'entity:node/' . $node->id() . ':' . $langcode;
+    foreach (array_keys($node->getTranslationLanguages()) as $langcode) {
       $raw_ids[] = $node->id() . ':' . $langcode;
-      $id_array = $node->id() . ':' . $langcode;
+    }
 
-      if (empty($item_ids)) {
-        return;
-      }
+    if (empty($raw_ids)) {
+      return;
+    }
 
-      try {
-        if ($this->indexTaskManager !== NULL) {
-          // IndexTaskManager::addItemsToIndex() accepts raw item IDs per
-          // datasource.  The item IDs here are already prefixed with the
-          // datasource plugin ID so we strip that prefix to get the raw IDs
-          // the tracker expects.
-          //$raw_ids = array_map(
-          //  static fn(string $id) => substr($id, strlen('entity:node/')),
-          //  $item_ids,
-          //);
-
-          /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
-          $tracker = $index->getTrackerInstance();
-          $tracker->trackItemsUpdated('entity:node', array($id_array));
-       }
-        else {
-          // Older Search API: call the tracker directly.
-          /** @var \Drupal\search_api\Tracker\TrackerInterface $tracker */
-          $tracker = $index->getTrackerInstance();
-          //$raw_ids = array_map(
-          //  static fn(string $id) => substr($id, strlen('entity:node/')),
-          //  $item_ids,
-          //);
-          $tracker->trackItemsUpdated('entity:node', array($id_array));
-        }
-      }
-      catch (\Exception $e) {
-        $this->logger->error(
-          'islandora: Failed to mark node @nid for reindex on "@index": @message',
-          [
-            '@nid'     => $node->id(),
-            '@index'   => $index->id(),
-            '@message' => $e->getMessage(),
-          ],
-        );
-      }
+    try {
+      // $index->trackItemsUpdated($datasource_id, $raw_ids) is defined on
+      // IndexInterface and internally prepends the datasource prefix before
+      // forwarding to the tracker.  This is the only correct call site.
+      $index->trackItemsUpdated('entity:node', $raw_ids);
+    }
+    catch (\Exception $e) {
+      $this->logger->error(
+        'islandora_media_reindex: Failed to mark node @nid for reindex on "@index": @message',
+        [
+          '@nid'     => $node->id(),
+          '@index'   => $index->id(),
+          '@message' => $e->getMessage(),
+        ],
+      );
     }
   }
 

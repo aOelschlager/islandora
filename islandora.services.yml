@@ -84,4 +84,3 @@ services:
       - '@entity_type.manager'
       - '@cache_tags.invalidator'
       - '@logger.channel.islandora'
-      - '@?search_api.index_task_manager'
